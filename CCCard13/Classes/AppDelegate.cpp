@@ -1,4 +1,5 @@
 #include "AppDelegate.h"
+#include "TitleScene.h"
 #include "MainScene.h"
 
 USING_NS_CC;
@@ -54,7 +55,7 @@ bool AppDelegate::applicationDidFinishLaunching()
     glview->setDesignResolutionSize(960, 640, ResolutionPolicy::SHOW_ALL);
     
     // シーンの生成
-    auto scene = MainScene::createScene();
+    auto scene = TitleScene::createScene();
     
     // シーン切り替え
     director->runWithScene(scene);
