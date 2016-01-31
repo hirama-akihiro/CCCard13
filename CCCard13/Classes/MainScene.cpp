@@ -11,11 +11,15 @@
 #define BUTTON_POSX 340 // ボタンの位置(x)
 #define BUTTON_POSY 120 // ボタンの位置(y)
 
+#define TIMER_LABEL_POSX 550 // ラベルの位置(x)
+#define TIMER_LABEL_POSY 120 // ラベルの位置(y)
+
 #define ZORDER_SHOW_CARD 1 // 表示しているカードのZオーダー
 #define ZORDER_MOVING_CARD 2 // 移動しているカードのZオーダー
 
 #define TAG_TRUSH_CARD 11 // 捨てられたカードのタグ
 #define TAG_BACK_CARD 12 // カードの山のタグ
+#define TAG_TIMER_LABEL 13 // 時間ラベルのタグ
 
 #define MOVING_TIME 0.3 // カードのアニメーションの実行
 
@@ -59,6 +63,32 @@ bool MainScene::init()
     initGame();
     
     return true;
+}
+
+void MainScene::update(float dt){
+    // 経過時間の計算
+    m_timer += dt;
+    
+    auto timerLabel = (Label*)getChildByTag(TAG_TIMER_LABEL);
+    if(timerLabel){
+        timerLabel->setString(StringUtils::format("%0.2fs",m_timer));
+    }
+    
+    // ゲームの終了判定
+    bool finish = true;
+    for(int tag = 1; tag <= 10; ++tag){
+        auto card = getChildByTag(tag);
+        if(card){
+            // 場にカードがある
+            finish = false;
+            break;
+        }
+    }
+    
+    if(finish){
+        // ゲーム終了
+        unscheduleUpdate();
+    }
 }
 
 void MainScene::initCards()
@@ -138,6 +168,9 @@ void MainScene::initGame()
 {
     // 裏を向いているカードを表示する
     showBackCards();
+    
+    // 時間を表示する
+    showTimerLabel();
     
     // ボタンを表示する
     showButton();
@@ -288,8 +321,26 @@ void MainScene::showBackCards()
     }
 }
 
+void MainScene::showTimerLabel()
+{
+    m_timer = 0;
+    
+    auto timerLabel = (Label*)getChildByTag(TAG_TIMER_LABEL);
+    if(!timerLabel){
+        // 時間ラベルを表示する
+        timerLabel = Label::createWithSystemFont("", "Arial", 48);
+        timerLabel->setPosition(TIMER_LABEL_POSX, TIMER_LABEL_POSY);
+        timerLabel->setTag(TAG_TIMER_LABEL);
+        addChild(timerLabel);
+    }
+    timerLabel->setString((StringUtils::format("%0.2fs", m_timer)));
+}
+
 void MainScene::onTapButton(cocos2d::Ref *sender, cocos2d::extension::Control::EventType controlEvent)
 {
+    // update関数の呼び出しを停止
+    unscheduleUpdate();
+    
     // カードを初期化する
     initCards();
     
@@ -301,6 +352,12 @@ void MainScene::onTapButton(cocos2d::Ref *sender, cocos2d::extension::Control::E
     
     // ゴミ箱を初期化する
     initTrash();
+    
+    // 時間を表示する
+    showTimerLabel();
+    
+    // update関数の呼び出しを開始
+    scheduleUpdate();
 }
 
 bool CardSprite::init()

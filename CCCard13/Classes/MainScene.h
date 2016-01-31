@@ -46,6 +46,7 @@ class MainScene : public cocos2d::Layer
 protected:
     std::vector<Card> m_cards;  // カード情報
     CardSprite* m_firstCard;    // 最初にタップされたカード
+    float m_timer; // 経過時間
     
     void initCards();   // カードを初期化する
     Card getCard(); // カードを取得する
@@ -57,13 +58,15 @@ protected:
     void initTrash(); // ゴミカードを初期化する
     void onTapButton(cocos2d::Ref* sender, cocos2d::extension::Control::EventType controlEvent); // ボタンがタップされた時に呼ばれる
     void showBackCards(); // カードの山を表示する
-    
+    void showTimerLabel(); // 経過時間を表示
 public:
     // Mainシーンを作成する
     static cocos2d::Scene* createScene();
 
     // 初期化処理を行う
     virtual bool init();
+    // 毎フレーム呼ばれる関数
+    virtual void update(float dt) override;
     
     // create関数作成マクロ
     CREATE_FUNC(MainScene);
