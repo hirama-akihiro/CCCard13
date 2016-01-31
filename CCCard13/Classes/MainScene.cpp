@@ -9,6 +9,7 @@
 #define CARD_DISTANCEY 200 // カード間の距離(y方向)
 
 #define ZORDER_SHOW_CARD 1 // 表示しているカードのZオーダー
+#define ZORDER_MOVING_CARD 2 // 移動しているカードのZオーダー
 
 USING_NS_CC;
 
@@ -31,6 +32,19 @@ bool MainScene::init()
 {
     // レイヤーの初期化
     if(!Layer::init()) { return false; }
+    
+    // シングルタップイベントの取得
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(_swallowsTouches); // 優先度の高いリスナーだけ実行
+    
+    // イベント関数の割り当て
+    listener->onTouchBegan = CC_CALLBACK_2(MainScene::onTouchBegan, this);
+    listener->onTouchMoved = CC_CALLBACK_2(MainScene::onTouchMoved, this);
+    listener->onTouchEnded = CC_CALLBACK_2(MainScene::onTouchEnded, this);
+    listener->onTouchCancelled = CC_CALLBACK_2(MainScene::onTouchCancelled, this);
+    
+    // イベントを追加する
+    getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
     
     // ゲームを初期化する
     initGame();
@@ -113,6 +127,50 @@ void MainScene::initGame()
     
     // カードを表示する
     showInitCards();
+}
+
+CardSprite* MainScene::getTouchCard(cocos2d::Touch *touch)
+{
+    for(int tag = 1; tag <= 10; tag++){
+        // 表示されているカードを取得
+        auto card = (CardSprite*)getChildByTag(tag);
+        if(card && card->getBoundingBox().containsPoint(touch->getLocation())){
+            // タップされたカードの場合は、そのカードを返す
+            return card;
+        }
+    }
+    return nullptr;
+}
+
+bool MainScene::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event)
+{
+    // タップされたカードを取得する
+    m_firstCard = getTouchCard(touch);
+    if(m_firstCard){
+        // 場に出ているカードが選択された場合
+        // Zオーダーを変更する
+        m_firstCard->setLocalZOrder(ZORDER_MOVING_CARD);
+        return true;
+    }
+    return false;
+}
+
+void MainScene::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event)
+{
+    // スワイプしているカードの位置を変更
+    m_firstCard->setPosition(m_firstCard->getPosition() + touch->getDelta());
+}
+
+void MainScene::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event)
+{
+    // タップしているカードの指定を外す
+    m_firstCard = nullptr;
+}
+
+void MainScene::onTouchCancelled(cocos2d::Touch *touch, cocos2d::Event *unused_event)
+{
+    // タップ終了と同じ処理を行う
+    onTouchEnded(touch, unused_event);
 }
 
 bool CardSprite::init()

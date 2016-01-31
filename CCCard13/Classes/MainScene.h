@@ -40,12 +40,14 @@ class MainScene : public cocos2d::Layer
 {
 protected:
     std::vector<Card> m_cards;  // カード情報
+    CardSprite* m_firstCard;    // 最初にタップされたカード
     
     void initCards();   // カードを初期化する
     Card getCard(); // カードを取得する
     void createCard(PosIndex posIndex); //　カードを作成する
     void showInitCards();   // ゲーム開始時にカードを10枚表示する
     void initGame();   // ゲームを初期化する
+    CardSprite* getTouchCard(cocos2d::Touch* touch); // タップされたカードを取得
     
 public:
     // Mainシーンを作成する
@@ -56,6 +58,12 @@ public:
     
     // create関数作成マクロ
     CREATE_FUNC(MainScene);
+    
+    // タップイベント
+    virtual bool onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* unused_event);
+    virtual void onTouchMoved(cocos2d::Touch* touch, cocos2d::Event* unused_event);
+    virtual void onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* unused_event);
+    virtual void onTouchCancelled(cocos2d::Touch* touch, cocos2d::Event* unused_event);
 };
 
 #endif // __MAIN_SCENE_H__
