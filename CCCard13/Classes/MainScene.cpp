@@ -77,10 +77,10 @@ Card MainScene::getCard()
 void MainScene::createCard(PosIndex posIndex)
 {
     // 新しいカードを作成する
-    Sprite* card = Sprite::create("card_spades.png");
-    card->setPosition(CARD_1_POSX + CARD_DISTANCEX * posIndex.m_x,
-                      CARD_1_POSY + CARD_DISTANCEY * posIndex.m_y);
-    addChild(card,ZORDER_SHOW_CARD);
+    auto card = CardSprite::create();
+    card->setCard(getCard());
+    card->setPosIndex(posIndex);
+    addChild(card, ZORDER_SHOW_CARD);
 }
 
 void MainScene::showInitCards()
@@ -113,4 +113,89 @@ void MainScene::initGame()
     
     // カードを表示する
     showInitCards();
+}
+
+bool CardSprite::init()
+{
+    if(!Sprite::init()){ return false;}
+    return true;
+}
+
+void CardSprite::onEnter()
+{
+    Sprite::onEnter();
+    
+    // 画像の表示
+    setTexture(getFileName(m_card.m_type));
+    
+    //　マークと数字の表示
+    showNumber();
+    
+    // カードの位置とタグを指定
+    float posX = CARD_1_POSX + CARD_DISTANCEX * m_posIndex.m_x;
+    float posY = CARD_1_POSY + CARD_DISTANCEY * m_posIndex.m_y;
+    setPosition(posX, posY);
+    setTag(m_posIndex.m_x + m_posIndex.m_y * 5 + 1);
+}
+
+std::string CardSprite::getFileName(CardType cardType)
+{
+    // ファイル名の取得
+    std::string filename;
+    switch (cardType) {
+        case Clubs:
+            filename = "card_clubs.png";
+            break;
+        case Diamonds:
+            filename = "card_diamonds.png";
+            break;
+        case Hearts:
+            filename = "card_hearts.png";
+            break;
+        default:
+            filename = "card_spades.png";
+            break;
+    }
+    return filename;
+}
+
+void CardSprite::showNumber()
+{
+    // 表示する数字の取得
+    std::string numberString;
+    switch (m_card.m_number) {
+        case 1:
+            numberString = "A";
+            break;
+        case 11:
+            numberString = "J";
+            break;
+        case 12:
+            numberString = "Q";
+            break;
+        case 13:
+            numberString = "K";
+            break;
+        default:
+            numberString = StringUtils::format("%d",m_card.m_number);
+            break;
+    }
+    
+    // 表示する文字色の取得
+    Color4B textColor;
+    switch (m_card.m_type) {
+        case Clubs:
+        case Spades:
+            textColor = Color4B::BLACK;
+            break;
+        default:
+            textColor = Color4B::RED;
+            break;
+    }
+    
+    // ラベルの生成
+    auto number = Label::createWithSystemFont(numberString, "Arial", 96);
+    number->setPosition(Point(getContentSize() / 2));
+    number->setTextColor(textColor);
+    addChild(number);
 }
