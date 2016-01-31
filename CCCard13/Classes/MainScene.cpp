@@ -71,7 +71,7 @@ void MainScene::update(float dt){
     
     auto timerLabel = (Label*)getChildByTag(TAG_TIMER_LABEL);
     if(timerLabel){
-        timerLabel->setString(StringUtils::format("%0.2fs",m_timer));
+        timerLabel->setString(StringUtils::format("%0.2fs", m_timer));
     }
     
     // ゲームの終了判定

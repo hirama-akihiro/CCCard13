@@ -50,6 +50,9 @@ bool AppDelegate::applicationDidFinishLaunching()
     // FPSの設定
     director->setAnimationInterval(1.0 / 60.0);
     
+    // DesignResolutionSizeの設定
+    glview->setDesignResolutionSize(960, 640, ResolutionPolicy::SHOW_ALL);
+    
     // シーンの生成
     auto scene = MainScene::createScene();
     
