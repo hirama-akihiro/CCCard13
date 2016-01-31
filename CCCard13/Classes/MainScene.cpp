@@ -8,14 +8,19 @@
 #define CARD_DISTANCEX 140 // カード間の距離(x方向)
 #define CARD_DISTANCEY 200 // カード間の距離(y方向)
 
+#define BUTTON_POSX 340 // ボタンの位置(x)
+#define BUTTON_POSY 120 // ボタンの位置(y)
+
 #define ZORDER_SHOW_CARD 1 // 表示しているカードのZオーダー
 #define ZORDER_MOVING_CARD 2 // 移動しているカードのZオーダー
 
 #define TAG_TRUSH_CARD 11 // 捨てられたカードのタグ
+#define TAG_BACK_CARD 12 // カードの山のタグ
 
 #define MOVING_TIME 0.3 // カードのアニメーションの実行
 
 USING_NS_CC;
+USING_NS_CC_EXT;
 
 Scene* MainScene::createScene()
 {
@@ -94,9 +99,13 @@ Card MainScene::getCard()
 
 void MainScene::createCard(PosIndex posIndex)
 {
+    float posX = CARD_1_POSX;
+    float posY = CARD_1_POSY - CARD_DISTANCEY;
+    
     // 新しいカードを作成する
     auto card = CardSprite::create();
     card->setCard(getCard());
+    card->setPosition(posX, posY);
     card->setPosIndex(posIndex);
     card->moveToInitPos();
     addChild(card, ZORDER_SHOW_CARD);
@@ -127,11 +136,11 @@ void MainScene::showInitCards()
 
 void MainScene::initGame()
 {
-    // カードを初期化する
-    initCards();
+    // 裏を向いているカードを表示する
+    showBackCards();
     
-    // カードを表示する
-    showInitCards();
+    // ボタンを表示する
+    showButton();
 }
 
 CardSprite* MainScene::getTouchCard(cocos2d::Touch *touch)
@@ -205,6 +214,11 @@ void MainScene::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event
             // カードを捨てる
             secondSprite->moveToTrash();
         }
+        
+        if((int)m_cards.size() <= 0){
+            // カードの山を削除する
+            removeChildByTag(TAG_BACK_CARD);
+        }
     }else{
         // タップしているカードを元の位置に戻す
         m_firstCard->moveBackToInitPos();
@@ -219,6 +233,74 @@ void MainScene::onTouchCancelled(cocos2d::Touch *touch, cocos2d::Event *unused_e
 {
     // タップ終了と同じ処理を行う
     onTouchEnded(touch, unused_event);
+}
+
+void MainScene::showButton()
+{
+    // ボタンを作成する
+    auto button = ControlButton::create(Scale9Sprite::create("button.png"));
+    
+    // 画像を引き延ばさない設定
+    button->setAdjustBackgroundImage(false);
+    
+    // ボタンの位置設定
+    button->setPosition(BUTTON_POSX, BUTTON_POSY);
+    
+    // ボタンをタップした時に呼び出す関数の設定
+    button->addTargetWithActionForControlEvents(this,
+                                                cccontrol_selector(MainScene::onTapButton),
+                                                Control::EventType::TOUCH_UP_INSIDE);
+    
+    // ボタンに表示する文字
+    button->setTitleForState("Start", Control::State::NORMAL);
+    
+    // 画面に追加する
+    addChild(button);
+}
+
+void MainScene::initTrash()
+{
+    while (true) {
+        // ゴミカードが無くなるまでループ
+        auto card = getChildByTag(TAG_TRUSH_CARD);
+        if(card){
+            // ゴミカードが見つかったら削除する
+            card->removeFromParent();
+        }else{
+            break;
+        }
+    }
+}
+
+void MainScene::showBackCards()
+{
+    auto backCards = getChildByTag(TAG_BACK_CARD);
+    if(!backCards){
+        // 表示されていない場合
+        float posX = CARD_1_POSX;
+        float posY = CARD_1_POSY - CARD_DISTANCEY;
+        
+        // カードの山を表示する
+        backCards = Sprite::create("card_back.png");
+        backCards->setPosition(posX, posY);
+        backCards->setTag(TAG_BACK_CARD);
+        addChild(backCards);
+    }
+}
+
+void MainScene::onTapButton(cocos2d::Ref *sender, cocos2d::extension::Control::EventType controlEvent)
+{
+    // カードを初期化する
+    initCards();
+    
+    // カードを表示する
+    showInitCards();
+    
+    // カードの山を表示する
+    showBackCards();
+    
+    // ゴミ箱を初期化する
+    initTrash();
 }
 
 bool CardSprite::init()
