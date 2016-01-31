@@ -11,6 +11,10 @@
 #define ZORDER_SHOW_CARD 1 // 表示しているカードのZオーダー
 #define ZORDER_MOVING_CARD 2 // 移動しているカードのZオーダー
 
+#define TAG_TRUSH_CARD 11 // 捨てられたカードのタグ
+
+#define MOVING_TIME 0.3 // カードのアニメーションの実行
+
 USING_NS_CC;
 
 Scene* MainScene::createScene()
@@ -94,6 +98,7 @@ void MainScene::createCard(PosIndex posIndex)
     auto card = CardSprite::create();
     card->setCard(getCard());
     card->setPosIndex(posIndex);
+    card->moveToInitPos();
     addChild(card, ZORDER_SHOW_CARD);
 }
 
@@ -134,7 +139,9 @@ CardSprite* MainScene::getTouchCard(cocos2d::Touch *touch)
     for(int tag = 1; tag <= 10; tag++){
         // 表示されているカードを取得
         auto card = (CardSprite*)getChildByTag(tag);
-        if(card && card->getBoundingBox().containsPoint(touch->getLocation())){
+        if(card &&
+           card != m_firstCard &&
+           card->getBoundingBox().containsPoint(touch->getLocation())){
             // タップされたカードの場合は、そのカードを返す
             return card;
         }
@@ -163,6 +170,47 @@ void MainScene::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event
 
 void MainScene::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event)
 {
+    bool success = false;
+    
+    // タップしたカードの取得
+    auto secondSprite = getTouchCard(touch);
+    if(secondSprite){
+        // 2枚選択
+        if(m_firstCard->getCard().m_number + secondSprite->getCard().m_number == 13){
+            // 2枚のカードを足して13になる
+            success = true;
+        }
+    }else{
+        if(m_firstCard->getCard().m_number == 13){
+            // 1枚のカードで13になる
+            success = true;
+        }
+    }
+    
+    if(success){
+        // 新しいカードを配置する
+        if((int)m_cards.size() > 0){
+            createCard(m_firstCard->getPosIndex());
+        }
+        
+        // カードを捨てる
+        m_firstCard->moveToTrash();
+        
+        if(secondSprite){
+            // もう1枚の新しいカードを配置する
+            if((int)m_cards.size() > 0){
+                createCard(secondSprite->getPosIndex());
+            }
+            
+            // カードを捨てる
+            secondSprite->moveToTrash();
+        }
+    }else{
+        // タップしているカードを元の位置に戻す
+        m_firstCard->moveBackToInitPos();
+        m_firstCard->setLocalZOrder(ZORDER_SHOW_CARD);
+    }
+    
     // タップしているカードの指定を外す
     m_firstCard = nullptr;
 }
@@ -184,15 +232,9 @@ void CardSprite::onEnter()
     Sprite::onEnter();
     
     // 画像の表示
-    setTexture(getFileName(m_card.m_type));
+    setTexture("card_back.png");
     
-    //　マークと数字の表示
-    showNumber();
-    
-    // カードの位置とタグを指定
-    float posX = CARD_1_POSX + CARD_DISTANCEX * m_posIndex.m_x;
-    float posY = CARD_1_POSY + CARD_DISTANCEY * m_posIndex.m_y;
-    setPosition(posX, posY);
+    // カードのタグを設定
     setTag(m_posIndex.m_x + m_posIndex.m_y * 5 + 1);
 }
 
@@ -256,4 +298,61 @@ void CardSprite::showNumber()
     number->setPosition(Point(getContentSize() / 2));
     number->setTextColor(textColor);
     addChild(number);
+}
+
+void CardSprite::moveBackToInitPos()
+{
+    // 移動アニメーションの作成
+    float posX = CARD_1_POSX + CARD_DISTANCEX * m_posIndex.m_x;
+    float posY = CARD_1_POSY + CARD_DISTANCEY * m_posIndex.m_y;
+    auto moveTo = MoveTo::create(MOVING_TIME, Point(posX, posY));
+    
+    // アニメーションの実行
+    runAction(moveTo);
+}
+
+void CardSprite::moveToTrash()
+{
+    // 移動アニメーションの作成
+    float posX = CARD_1_POSX + CARD_DISTANCEX * 4;
+    float posY = CARD_1_POSY - CARD_DISTANCEY;
+    auto moveTo = MoveTo::create(MOVING_TIME, Point(posX, posY));
+    
+    // アニメーション後に呼び出す関数の作成
+    auto func = CallFunc::create([&](){
+        setTag(TAG_TRUSH_CARD);
+    });
+    
+    // アクションの直列結合
+    auto seq = Sequence::create(moveTo, func, nullptr);
+    
+    // アニメーションの実行
+    runAction(seq);
+}
+
+void CardSprite::moveToInitPos()
+{
+    // カードの位置とタグを指定
+    float posX = CARD_1_POSX + CARD_DISTANCEX * m_posIndex.m_x;
+    float posY = CARD_1_POSY + CARD_DISTANCEY * m_posIndex.m_y;
+    auto moveTo = MoveTo::create(MOVING_TIME, Point(posX, posY));
+    
+    // カードの回転アニメーションの作成
+    auto scale1 = ScaleTo::create(MOVING_TIME / 2, 0, 1);
+    auto func1 = CallFunc::create([&](){
+        // 画像の表示
+        setTexture(getFileName(m_card.m_type));
+        // 数字の表示
+        showNumber();
+    });
+    auto scale2 = ScaleTo::create(MOVING_TIME / 2, 1, 1);
+    
+    // アクションの直列結合
+    auto seq1 = Sequence::create(scale1, func1, scale2, nullptr);
+    
+    // アクションの並列結合
+    auto spawn = Spawn::create(moveTo, seq1, nullptr);
+    
+    // アニメーションの実行
+    runAction(spawn);
 }

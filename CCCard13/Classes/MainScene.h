@@ -34,6 +34,10 @@ public:
     CREATE_FUNC(CardSprite); // create関数作成マクロ
     CC_SYNTHESIZE(Card, m_card, Card); // カード情報
     CC_SYNTHESIZE(PosIndex, m_posIndex, PosIndex); // 表示位置
+    
+    void moveBackToInitPos(); // 元の位置に移動する
+    void moveToTrash(); // カードを捨てる
+    void moveToInitPos(); // 最初の位置に移動する
 };
 
 class MainScene : public cocos2d::Layer
